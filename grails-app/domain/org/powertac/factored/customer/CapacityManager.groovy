@@ -82,17 +82,32 @@ class CapacityManager
 				baseCapacity += draw / BASE_CAPACITY_TIMESLOTS
 			}
 		}
-		return baseCapacity
+		return truncateTo2Decimals(baseCapacity)
 	}
 	
 	double computeCapacity(Timeslot timeslot, TariffSubscription subscription)
 	{
+		double computedCapacity
 		if (capacityProfile.specType == CapacityProfile.SpecType.BEHAVIORS) {
-			computeCapacityFromBehaviors(timeslot, subscription)
+			computedCapacity = computeCapacityFromBehaviors(timeslot, subscription)
 		} else {  // CapacityProfile.SpecType.FACTORED
-			computeCapacityFromFactors(timeslot, subscription)
+			computedCapacity = computeCapacityFromFactors(timeslot, subscription)
 		}
+		return truncateTo2Decimals(computedCapacity)
 	}
+
+	private static double truncateTo2Decimals(double x){
+    		double fract
+		double whole
+    		if (x > 0) {
+      		   whole = Math.floor(x)
+      		   fract = Math.floor((x - whole) * 100) / 100;
+    		} else {
+      		   whole = Math.ceil(x)
+    		   fract = Math.ceil((x - whole) * 100) / 100;
+    		}
+		return whole + fract;
+  	}
 	
 	double computeCapacityFromBehaviors(Timeslot timeslot, TariffSubscription subscription)
 	{

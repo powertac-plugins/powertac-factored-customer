@@ -73,7 +73,7 @@ class FactoredCustomerModel extends AbstractCustomer
 	/** @Override **/
 	void unsubscribe(TariffSubscription subscription, int customerCount) {
 	  subscription.unsubscribe(customerCount)
-	  log.info "unsubscribe(): ${toString()} unsubscribed ${customerCount} customers to tariff ${tariff}."
+	  log.info "unsubscribe(): ${toString()} unsubscribed ${customerCount} customers from tariff subscription ${subscription}."
 	}
   
 	///////////////// TARIFF EVALUATION //////////////////////
