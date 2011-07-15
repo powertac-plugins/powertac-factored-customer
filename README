@@ -1,0 +1,11 @@
+Title:  Factored Customer Model
+
+Author:  Prashant Reddy
+Contact:  ppr@cs.cmu.edu
+
+Description:
+This plugin contains a "Factored Behaviors" statistical model of customer populations 
+with consumption and/or production capacities. Behaviors such as tariff-utility, 
+tariff-switching-inertia and elasticity-of-capacity can be specified directly using 
+probability distributions, or alternately, they can be computed by the model using 
+specified factors which underlie those behaviors.
