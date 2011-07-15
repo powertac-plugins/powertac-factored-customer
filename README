@@ -8,4 +8,4 @@ This plugin contains a "Factored Behaviors" statistical model of customer popula
 with consumption and/or production capacities. Behaviors such as tariff-utility, 
 tariff-switching-inertia and elasticity-of-capacity can be specified directly using 
 probability distributions, or alternately, they can be computed by the model using 
-specified factors which underlie those behaviors.
+specified factors which underlie those behaviors (not fully implemented yet).
