@@ -335,11 +335,12 @@ class FactoredCustomerModel extends AbstractCustomer
 	/**
 	 * @Override
 	 */
-	def getBootstrapData() 
+	double[][] getBootstrapData() 
 	{
 		final int numDays = 14
 		final int numHours = 24
-		def bsData = new long[numDays][numHours]
+
+		def bsData = new double[numDays][numHours]
 		for (int i=0; i < numDays; i++) {
 			for (int j=0; j < numHours; j++) {
 				double netCapacity = 0.0 
@@ -351,7 +352,7 @@ class FactoredCustomerModel extends AbstractCustomer
 						netCapacity -= draw
 					}
 				}
-				bsData[i][j] = (long) netCapacity
+				bsData[i][j] = netCapacity
 			}
 		}
 		return bsData
