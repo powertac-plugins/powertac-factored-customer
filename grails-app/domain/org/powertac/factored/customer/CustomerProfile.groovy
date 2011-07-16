@@ -29,7 +29,7 @@ class CustomerProfile
 	enum CustomerRole { CONSUMER, PRODUCER, COMBINED }
 	enum ModelType { INDIVIDUAL, POPULATION }
 	
-	enum TariffUtilityCriteria { LOWEST_COST, PREFER_GREEN }
+	enum TariffUtilityCriteria { BEST_VALUE, PREFER_GREEN }
 	
 	Random random
 	String name

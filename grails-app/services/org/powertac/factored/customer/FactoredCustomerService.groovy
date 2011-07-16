@@ -44,12 +44,11 @@ class FactoredCustomerService implements TimeslotPhaseProcessor {
   Random random
 
   def customerProfiles = [:]
-  def customerModelFactory = new CustomerModelFactory()
   def customerModels = [:] 
+  def customerModelFactory = new CustomerModelFactory()
   
   void afterPropertiesSet()
   {
-    competitionControlService.registerTimeslotPhase(this, 1)
     //competitionControlService.registerTimeslotPhase(this, 2)
   }
 
@@ -60,6 +59,8 @@ class FactoredCustomerService implements TimeslotPhaseProcessor {
     pluginConfig = c
 	File configFile = new File(pluginConfig.configuration['configFile'].toString())
 	log.info "init() - Loading customer profiles from config file: ${configFile}."
+	
+	competitionControlService.registerTimeslotPhase(this, 1)
 	
 	def xmlRoot = new XmlSlurper().parse(configFile)
 	xmlRoot.profile.each { profile ->
@@ -75,23 +76,28 @@ class FactoredCustomerService implements TimeslotPhaseProcessor {
 	customerModelFactory.registerDefaultCreator(FactoredCustomerModel)
 	
 	log.info "init() - Creating customer models from configured profiles."
-	customerProfiles.each { key, value -> 
-		def customerModel = customerModelFactory.processProfile(value)
+	customerProfiles.each { profileName, customerProfile -> 
+		def customerModel = customerModelFactory.processProfile(customerProfile)
 		if (customerModel != null) {
-			customerModels.put(key, customerModel)
-			customerModel.init(value)
-			customerModel.subscribeDefault()
+			customerModels.put(profileName, customerModel)
+			customerModel.init(customerProfile)
+			customerModel.subscribeDefault()			
+			tariffMarketService?.registerNewTariffListener(customerModel)
 			assert(customerModel.save())
 		} else throw new Error("Could not create customer model for profile: ${customerProfile.name}.")
 	}
 	log.info "init() - Successfully initialized customer models from profiles."	
   }
 
+  /** @Override **/
   void activate(Instant now, int phase) 
-  {
-    log.info "activate() - now: $now"
-		
-    if (phase == 1) customerModels*.step()
+  {	 		
+	log.info "activate() - begin - now: $now"
+	customerModels.each { name, customerModel -> 
+		assert(customerModel.save())
+		customerModel.step()
+	}
+	log.info "activate() - end"
   }
 
 } // end class
