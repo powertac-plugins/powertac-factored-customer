@@ -7,7 +7,7 @@
     <canNegotiate value="false" />
     <capacity id="1" type="CONSUMPTION" subType="NONE" specType="BEHAVIORS" 
 	      description="Typical Pittsburgh households.">
-      <baseBenchmarkRate value="8.0" />
+      <baseBenchmarkRate value="0.08" />
       <!--baseTotalCapacity probability="UNIFORM" low="200000" high="400000" /-->
       <baseTotalCapacity probability="NORMAL" mean="300000" stdDev="5000" />
       <!--baseTotalCapacity probability="LOGNORMAL" expMean="300000" expStdDev="1.2" /-->
@@ -26,7 +26,7 @@
     <canNegotiate value="false" />
     <capacity id="1" type="CONSUMPTION" subType="NONE" specType="BEHAVIORS" 
 	      description="Eco-conscious Pittsburgh shopping area.">
-      <baseBenchmarkRate value="9.0" />
+      <baseBenchmarkRate value="0.10" />
       <!--baseTotalCapacity probability="UNIFORM" low="150000" high="900000" /-->
       <!--baseTotalCapacity probability="LOGNORMAL" expMean="500000" expStdDev="1.2" /-->
       <baseCapacityPerCustomer probability="LOGNORMAL" expMean="60" expStdDev="1.5" />
@@ -43,7 +43,7 @@
     <canNegotiate value="false" />
     <capacity id="1" type="PRODUCTION" subType="WIND" specType="BEHAVIORS" 
 	      description="Excess solar generation at amusement park.">
-      <baseBenchmarkRate value="7.0" />
+      <baseBenchmarkRate value="0.07" />
       <baseTotalCapacity probability="UNIFORM" low="10000" high="20000" />
       <elasticityOfCapacity function="0.7: 0.8, 0.5: 0.0" /><!-- each pair is [rate%: capacity%] -->
     </capacity>
@@ -58,8 +58,8 @@
     <canNegotiate value="false" />
     <capacity id="1" type="CONSUMPTION" subType="NONE" specType="BEHAVIORS" 
 	      description="Typical Pittsburgh households.">
-      <baseBenchmarkRate value="8.0" />
-      <baseCapacityPerCustomer probability="NORMAL" mean="30000" stdDev="5000" /><!-- kWh per day -->
+      <baseBenchmarkRate value="0.08" />
+      <baseTotalCapacity probability="NORMAL" mean="30000" stdDev="5000" /><!-- kWh per day -->
       <!--baseCapacityPerCustomer probability="NORMAL" mean="30" stdDev="5" /--><!-- kWh per day -->
       <elasticityOfCapacity function="1.2: 0.9, 1.3: 0.8, 1.4: 0.75" /><!-- each pair is [rate%, capacity%] -->
     </capacity>
@@ -75,7 +75,7 @@
     <canNegotiate value="true" />
     <capacity id="1" type="PRODUCTION" subType="SOLAR" specType="BEHAVIORS" 
 	      description="Multiple solar installations.">
-      <baseBenchmarkRate value="7.0" />
+      <baseBenchmarkRate value="0.07" />
       <baseCapacityPerCustomer probability="NORMAL" mean="80000" stdDev="20000" /><!-- kWh per day -->
       <elasticityOfCapacity function="0.8: 0.8, 0.5: 0.7" /><!-- each pair is [rate%: capacity%] -->
     </capacity>
@@ -90,7 +90,7 @@
     <canNegotiate value="true" />
     <capacity id="1" type="CONSUMPTION" subType="NONE" specType="BEHAVIORS" 
 	      description="Consumption by campus facilities.">
-      <baseBenchmarkRate value="8.0" />
+      <baseBenchmarkRate value="0.08" />
       <baseCapacityPerCustomer probability="NORMAL" mean="150000" stdDev="50000" /><!-- kWh per day -->
       <!--baseCapacityPerCustomer probability="POINTMASS" value="300000" /--><!-- kWh per day -->
       <elasticityOfCapacity function="1.2: 0.8, 1.3: 0.75" /><!-- each pair is [rate%, capacity%] -->
@@ -106,7 +106,7 @@
     <canNegotiate value="true" />
     <capacity id="2" type="PRODUCTION" subType="WIND" specType="BEHAVIORS" 
 	      description="10 wind turbines at 10 kWh per day.">
-      <baseBenchmarkRate value="7.0"  />
+      <baseBenchmarkRate value="0.07"  />
       <baseCapacityPerCustomer probability="NORMAL" mean="20000" stdDev="5000" /><!-- kWh per day -->
       <elasticityOfCapacity function="0.7: 0.0" /><!-- each pair is [rate%: capacity%] -->
     </capacity>
@@ -121,7 +121,7 @@
     <canNegotiate value="false" />
     <capacity id="1" type="PRODUCTION" subType="WIND" specType="BEHAVIORS" 
 	      description="Excess solar generation at amusement park.">
-      <baseBenchmarkRate value="7.0" />
+      <baseBenchmarkRate value="0.07" />
       <baseTotalCapacity probability="UNIFORM" low="10000" high="20000" />
       <elasticityOfCapacity function="0.8: 0.8, 0.75: 0.7" /><!-- each pair is [rate%: capacity%] -->
     </capacity>
