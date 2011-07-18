@@ -117,7 +117,7 @@
   <profile name="WindmillCoOp">
     <category entityType="COMMERCIAL" customerRole="PRODUCER" modelType="INDIVIDUAL" />
     <population value="50" />
-    <multiContracting value="false" />
+    <multiContracting value="true" />
     <canNegotiate value="false" />
     <capacity id="1" type="PRODUCTION" subType="WIND" specType="BEHAVIORS" 
 	      description="Excess solar generation at amusement park.">
@@ -125,7 +125,7 @@
       <baseTotalCapacity probability="UNIFORM" low="10000" high="20000" />
       <elasticityOfCapacity function="0.8: 0.8, 0.75: 0.7" /><!-- each pair is [rate%: capacity%] -->
     </capacity>
-    <tariffUtility criteria="BEST_VALUE" allocations="" />
+    <tariffUtility criteria="BEST_VALUE" allocations="0.75:0.25" />
     <tariffSwitchingInertia probability="INTERVAL" mean="0.1" stdDev="0.05" low="0" high="1" />
   </profile>
 

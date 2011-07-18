@@ -32,6 +32,8 @@ import org.powertac.factored.customer.CapacityProfile.CapacityType
  */
 class FactoredCustomerModel extends AbstractCustomer implements NewTariffListener
 {
+	def profileCacheService // autowire
+	
 	CustomerProfile customerProfile
 	boolean canConsume = false
 	boolean canProduce = false
@@ -84,7 +86,8 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 	void publishNewTariffs (List<Tariff> newTariffs)
 	{
 		log.info "publishNewTariffs() begin - ${toString()}, timeslot: ${timeService.currentTime}"
-		if (subscriptions == null || subscriptions.size() == 0) {
+		def mySubscriptions = TariffSubscription.findAllByCustomer(this)
+		if (mySubscriptions == null || mySubscriptions.size() == 0) {
 			subscribeDefault()
 		} else { 
 			handleNewTariffs(newTariffs) 
@@ -137,11 +140,10 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 		ignoredTariffs?.each { ignoredTariff -> allTariffs.add(ignoredTariff) }
 		ignoredTariffs?.clear()
 		
-		allTariffs.addAll(subscriptions*.tariff)
-		log.info "handleNewTariffs(): Total number of tariffs for evaluation: ${allTariffs.size()}"
+		allTariffs.addAll(TariffSubscription.findAllByCustomer(this)*.tariff)
 	
-		manageSubscriptions(allTariffs, CapacityType.CONSUMPTION)	
-		manageSubscriptions(allTariffs, CapacityType.PRODUCTION)	
+		if (canConsume) manageSubscriptions(allTariffs, CapacityType.CONSUMPTION)	
+		if (canProduce) manageSubscriptions(allTariffs, CapacityType.PRODUCTION)	
 
 		assert(this.save())
 		
@@ -158,12 +160,12 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 				evalTariffs.add(tariff)
 			}
 		}
-
 		if (evalTariffs.isEmpty()) {
 			log.info "manageSubscriptions(): end early - No new tariffs to evaluate for capacity type ${capacityType}"
 			return
 		}
-
+		log.info "manageSubscriptions(): Number of ${capacityType} tariffs for evaluation: ${evalTariffs.size()}"
+		
 		List<Double> estimatedPayments = new ArrayList<Double>(evalTariffs.size())
 		for (int i=0; i < evalTariffs.size(); ++i) {
 			def tariff = evalTariffs[i]
@@ -181,35 +183,37 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 		}		
 		double[] allocations = determineAllocations(evalTariffs, estimatedPayments, capacityType)
 		log.debug "manageSubscriptions(): ${capacityType} allocations: ${allocations}"
-
-		int overAllocations = 0
 		
+		int overAllocations = 0
 		for (int i=0; i < evalTariffs.size(); ++i) {
 			def evalTariff = evalTariffs[i]
-			def subscription = findSubscriptionForTariff(evalTariff) // could be null
-			if (subscription != null && subscription.customersCommitted > allocations[i]) {
-				int numChange = subscription.customersCommitted - allocations[i]
-				log.info("handleNewTariffs() - Unsubscribing ${numChange} ${capacityType} customers from tariff ${evalTariff}")
-				unsubscribe(subscription, numChange)
-			} else if (allocations[i] > 0 && (subscription == null || subscription.customersCommitted < allocations[i])) {
-				int currentCommitted = (subscription != null) ? subscription.customersCommitted : 0
-				int numChange = (subscription == null) ? allocations[i] : allocations[i] - subscription.customersCommitted
-				if (numChange > 0) {
-					if (evalTariff.isExpired()) {
-						overAllocations += numChange
-						if (currentCommitted > 0) {
-							log.info("handleNewTariffs() - Maintaining ${currentCommitted} ${capacityType} customers in expired tariff ${evalTariff}")
-						}
-						log.info("handleNewTariffs() - Reallocating ${numChange} ${capacityType} customers from expired tariff ${evalTariff} to other tariffs")
-					} else {
-						log.info("handleNewTariffs() - Subscribing ${numChange} ${capacityType} customers to tariff ${evalTariff}")
-						subscribe(evalTariff, numChange)
-					}
+			def allocation = allocations[i]
+			def subscription = TariffSubscription.findByTariffAndCustomer(evalTariff, this) // could be null
+			int currentCommitted = (subscription != null) ? subscription.customersCommitted : 0
+			int numChange = allocation - currentCommitted 
+			
+			log.debug "evalTariff = ${evalTariff}, numChange = ${numChange}, currentCommitted = ${currentCommitted}, allocation = ${allocation}"
+			
+			if (numChange == 0) {
+				if (currentCommitted > 0) {
+					log.info "handleNewTariffs() - Maintaining ${currentCommitted} ${capacityType} customers in tariff ${evalTariff}"
+				} else {
+					log.info "handleNewTariffs() - Not allocating any ${capacityType} customers to tariff ${evalTariff}"
 				}
-			} else if (subscription != null && subscription.customersCommitted == allocations[i]) {
-				log.info("handleNewTariffs() - Maintaining ${subscription.customersCommitted} ${capacityType} customers in tariff ${evalTariff}")
-			} else { // subscription == null && allocations[i] == 0
-				log.info("handleNewTariffs() - Not allocating any ${capacityType} customers to tariff ${evalTariff}")
+			} else if (numChange > 0) {
+				if (evalTariff.isExpired()) {
+					overAllocations += numChange
+					if (currentCommitted > 0) {
+						log.info "handleNewTariffs() - Maintaining ${currentCommitted} ${capacityType} customers in expired tariff ${evalTariff}"
+					}
+					log.info "handleNewTariffs() - Reallocating ${numChange} ${capacityType} customers from expired tariff ${evalTariff} to other tariffs"
+				} else { 
+				    log.info("handleNewTariffs() - Subscribing ${numChange} ${capacityType} customers to tariff ${evalTariff}")
+					subscribe(evalTariff, numChange)
+				}
+			} else if (numChange < 0) {
+				log.info "handleNewTariffs() - Unsubscribing ${-numChange} ${capacityType} customers from tariff ${evalTariff}"
+				unsubscribe(subscription, -numChange)
 			}
 		}
 		if (overAllocations > 0) {
@@ -228,17 +232,6 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 	}
 	
 	/**
-	 * Note: This method can return null if there is no matching subscription.
-	 */
-	TariffSubscription findSubscriptionForTariff(Tariff tariff) 
-	{
-		subscriptions.each { subscription ->
-			if (subscription.tariff == tariff) return subscription
-		}
-		return null
-	}
-
-	/**
 	 * @Override
 	 */
 	double estimateFixedTariffPayments(Tariff tariff)
@@ -256,7 +249,7 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 	double[] determineAllocations(List<Tariff> evalTariffs, List<Double> estimatedPayments, CapacityType capacityType) 
 	{
 		int numTariffs = evalTariffs.size()
-		List allRules = customerProfile.tariffUtilityAllocations
+		List allRules = profileCacheService.tariffUtilityAllocations[customerProfile.name]
 		List allocationRule
 		if (allRules == null) {
 			allocationRule = new ArrayList(numTariffs)
@@ -271,12 +264,11 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 			for (int i=0; i < numTariffs; ++i) {
 				allocationRule[i] = (i < largestRule.size()) ? largestRule[i] : 0.0
 			}
-		}
+		}		
 		// payments are negative for production, so sorting is still valid
 		ArrayList<Double> sortedPayments = new ArrayList<Double>(estimatedPayments)
 		Collections.copy(sortedPayments, estimatedPayments)
 		Collections.sort(sortedPayments)
-		log.debug "manageSubscriptions(): ${capacityType} sorted payments: ${sortedPayments}"
 		
 		def allocations = new double[numTariffs]
 		for (int i=0; i < numTariffs; ++i) {
@@ -316,7 +308,7 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 		Timeslot timeslot =  Timeslot.currentTimeslot()
 			
 		double totalConsumption = 0.0
-		subscriptions.each { subscription ->
+		TariffSubscription.findAllByCustomer(this).each { subscription ->
 			if (subscription.customersCommitted > 0 && 
 				CapacityProfile.reportCapacityType(subscription.tariff.tariffSpec.powerType) == CapacityType.CONSUMPTION) {
 				capacityManagers.each { capacityManager -> 		
@@ -339,7 +331,7 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 		Timeslot timeslot =  Timeslot.currentTimeslot()
 			
 		double totalProduction = 0.0
-		subscriptions.each { subscription ->		
+		TariffSubscription.findAllByCustomer(this).each { subscription ->		
 			if (subscription.customersCommitted > 0 && 
 				CapacityProfile.reportCapacityType(subscription.tariff.tariffSpec.powerType) == CapacityType.PRODUCTION) {	
 					capacityManagers.each { capacityManager -> 		

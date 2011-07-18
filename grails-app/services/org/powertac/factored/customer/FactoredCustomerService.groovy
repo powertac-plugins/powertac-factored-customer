@@ -33,6 +33,8 @@ import org.powertac.factored.customer.model.*
 
 class FactoredCustomerService implements TimeslotPhaseProcessor {
 
+  def sessionFactory // autowire
+  
   static transactional = true
 
   def timeService // autowire
@@ -54,6 +56,9 @@ class FactoredCustomerService implements TimeslotPhaseProcessor {
 
   void init(PluginConfig c) 
   {
+	customerProfiles.clear()
+	customerModels.clear()
+	
 	random = new Random(randomSeedService.nextSeed('FactoredCustomerService', 'service', 'init'))
 	
     pluginConfig = c
@@ -94,8 +99,9 @@ class FactoredCustomerService implements TimeslotPhaseProcessor {
   {	 		
 	log.info "activate() - begin - now: $now"
 	customerModels.each { name, customerModel -> 
-		assert(customerModel.save())
+		sessionFactory.currentSession.refresh(customerModel)
 		customerModel.step()
+		assert(customerModel.save())
 	}
 	log.info "activate() - end"
   }

@@ -25,6 +25,8 @@ import org.powertac.common.CustomerInfo
  */
 class CustomerProfile
 {
+	def profileCacheService // autowire
+	
 	enum EntityType { HOUSEHOLD, COMMERCIAL, INDUSTRIAL, AGRICULTURAL }
 	enum CustomerRole { CONSUMER, PRODUCER, COMBINED }
 	enum ModelType { INDIVIDUAL, POPULATION }
@@ -38,7 +40,7 @@ class CustomerProfile
 	
 	// Customer behaviors
 	TariffUtilityCriteria tariffUtilityCriteria = null
-	List tariffUtilityAllocations = null
+	String tariffUtilityAllocationsConfig = null
 	ProbabilityDistribution tariffSwitchingInertia = null
 	
 	// Customer factors
@@ -53,7 +55,7 @@ class CustomerProfile
 	
 	static constraints = {
 		tariffUtilityCriteria(nullable: true)
-		tariffUtilityAllocations(nullable: true)
+		tariffUtilityAllocationsConfig(nullable: true)
 		tariffSwitchingInertia(nullable: true)
 		temperatureByMonth(nullable: true)
 		customerWealth(nullable: true)
@@ -102,7 +104,8 @@ class CustomerProfile
 				capacityProfile = new BehaviorsProfile()
 				if (! customerBehaviorsInitialized) {
 					tariffUtilityCriteria = Enum.valueOf(TariffUtilityCriteria.class, xml.tariffUtility.@criteria.text())
-					tariffUtilityAllocations = allocationRulesAsMap(xml.tariffUtility.@allocations.text())
+					tariffUtilityAllocationsConfig = xml.tariffUtility.@allocations.text()
+					profileCacheService.tariffUtilityAllocations[name] = allocationRulesAsNestedList(tariffUtilityAllocationsConfig)
 					tariffSwitchingInertia = new ProbabilityDistribution().init(xml.tariffSwitchingInertia, random.nextLong())
 					customerBehaviorsInitialized = true
 				}
@@ -129,7 +132,7 @@ class CustomerProfile
 		assert(customerInfo.save())
 	}
 	
-	List allocationRulesAsMap(String input) 
+	List allocationRulesAsNestedList(String input) 
 	{
 		// example input: "0.7:0.3, 0.5:0.3:0.2, 0.4:0.3:0.2:0.1, 0.4:0.3:0.2:0.05:0.05"
 		// which yields the following rules:
@@ -139,11 +142,11 @@ class CustomerProfile
 		// 		size = 5, rule = [0.4, 0.3, 0.2, 0.05, 0.05]
 		
 		List rules = input.tokenize(',')
-		List ret = new ArrayList(rules.size() + 1)
+		List ret = new ArrayList(rules.size() + 1)		
 		List degenerateRule = new ArrayList(1)
 		degenerateRule.add(1.0)
 		ret.add(degenerateRule)
-		for (int i=0; i < rules.size(); ++i) {
+		for (int i=0; i < rules.size(); ++i) {			
 			List vals = rules[i].tokenize(':')
 			List rule = new ArrayList(vals.size())
 			for (int j=0; j < vals.size(); ++j) {
