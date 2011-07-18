@@ -164,12 +164,6 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 			return
 		}
 
-		// TEMP FIXME
-		System.err.println "EvalTariffs for customer: ${customerProfile.name}"
-		evalTariffs.each { t -> 
-			System.err.println "Tariff: ${t}, tariff.broker: ${t.broker}"
-		}
-		
 		List<Double> estimatedPayments = new ArrayList<Double>(evalTariffs.size())
 		for (int i=0; i < evalTariffs.size(); ++i) {
 			def tariff = evalTariffs[i]
@@ -185,14 +179,8 @@ class FactoredCustomerModel extends AbstractCustomer implements NewTariffListene
 				estimatedPayments[i] = estimateFixedTariffPayments(tariff) + totalVariablePayments
 			} 
 		}		
-		System.err.println "Estimated payments for customer: ${customerProfile.name}"
-		estimatedPayments.each { p -> 
-			System.err.println "Est. Payment: ${p}"
-		}
 		double[] allocations = determineAllocations(evalTariffs, estimatedPayments, capacityType)
 		log.debug "manageSubscriptions(): ${capacityType} allocations: ${allocations}"
-
-		System.err.println "Allocations for customer: ${customerProfile.name}: ${allocations}}"
 
 		int overAllocations = 0
 		
