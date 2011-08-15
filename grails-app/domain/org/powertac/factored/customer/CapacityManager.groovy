@@ -20,7 +20,7 @@ import org.joda.time.Instant
 import org.powertac.common.Tariff
 import org.powertac.common.TariffSubscription
 import org.powertac.common.Timeslot
-
+import org.powertac.common.WeatherReport
 
 /**
  * @author Prashant
@@ -48,6 +48,8 @@ class CapacityManager
 	
 	double computeDailyUsageCharge(Tariff tariff)
 	{
+        if (Timeslot.currentTimeslot()!=null)
+        {
 		int hoursToMidnight = NUM_HOURS_IN_DAY - (timeService.getHourOfDay() + 1)
 		Timeslot hourlyTimeslot = Timeslot.currentTimeslot()
 		for (int i=0; i < hoursToMidnight; ++i) hourlyTimeslot.next()
@@ -69,6 +71,11 @@ class CapacityManager
 			hourlyTimeslot.next()
 		}
 		return totalCharge
+        }
+        else
+        {
+            return 0
+        }
 	}
 	
 	double drawBaseCapacitySample() 
@@ -130,7 +137,7 @@ class CapacityManager
 		if (capacityProfile.elasticityOfCapacity != null) {
 			adjustedCapacity = computeElasticCapacity(timeslot, subscription, baseCapacity)
 		}
-		
+
 		// TODO: Adjust for the other specified factors
 		
 		return adjustedCapacity
